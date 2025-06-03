@@ -152,6 +152,9 @@ def main():
 
         temp_file_path = None
         try:
+            if temp_file_path is None:
+                st.error("No image uploaded or captured. Please upload an image or take a photo.")
+
             if uploaded_file is not None:
                 with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as temp_file:
                     temp_file.write(uploaded_file.getvalue())
@@ -160,7 +163,7 @@ def main():
                 with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as temp_file:
                     temp_file.write(camera_file.getvalue())
                     temp_file_path = temp_file.name
-
+            
             with Image.open(temp_file_path) as image:
                 results = get_similar_images_st(
                     db, [temp_file_path], config.get("num_similar_images", 20)

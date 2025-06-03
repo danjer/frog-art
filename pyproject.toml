@@ -1,11 +1,10 @@
 [tool.poetry]
-name = "reverse-image-search"
+name = "frog-art"
 version = "0.1.94"
 description = "Searches for similar images locally"
 authors = ["tikendraw <tikendraksahu1029@gmail.com>"]
 readme = "README.md"
 packages = [
-    { include = "reverse_image_search" },
     { include = "v2" },
 ]
 
