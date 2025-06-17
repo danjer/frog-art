@@ -1,7 +1,8 @@
 import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
 import { useState, useEffect, useRef } from 'react';
-import { Button, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Button, Image, StyleSheet, Text, TouchableOpacity, View, Alert } from 'react-native';
 import { useRouter, useNavigation } from 'expo-router';
+import * as FileSystem from 'expo-file-system';
 import theme from './style';
 
 
@@ -27,7 +28,7 @@ export default function CameraScreen() {
     // Camera permissions are not granted yet.
     return (
       <View style={styles.container}>
-        <Image style={styles.image} source={require('../assets/images/react-logo.png')}/>
+        <Image source={require('../assets/images/react-logo.png')}/>
         <Text style={styles.message}>We need your permission to show the camera</Text>
         <Button onPress={requestPermission} title="grant permission" />
       </View>
@@ -50,6 +51,49 @@ export default function CameraScreen() {
     setPhotoUri(null); // Clear the photo URI to show the camera again
   };
 
+  const confirmPhotoAndSend = async () => {
+    if (!photoUri) {
+      Alert.alert('Error', 'No photo to send.');
+      return;
+    }
+
+    try {
+      // Expo neemt foto van device en convert naar base64
+      const base64 = await FileSystem.readAsStringAsync(photoUri, { encoding: FileSystem.EncodingType.Base64 });
+
+      const data = {
+        image: `data:image/jpeg;base64,${base64}`,
+      };
+
+      console.log('Sending photo to API...', data);
+      router.navigate('/');
+      const response = await fetch('http://localhost:8001/api/embeddings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Photo uploaded successfully:', result);
+        Alert.alert('Success', 'Photo uploaded successfully!');
+        setPhotoUri(null); // Clear photo URI
+        router.navigate('/'); // Example: navigate back home
+      } else {
+        // Als het naar de klote gaat
+        const errorData = await response.text();
+        console.error('Failed to upload photo:', response.status, errorData);
+        Alert.alert('Error', `Failed to upload photo: ${response.status} - ${errorData}`);
+        router.navigate('/');
+      }
+    } catch (error) {
+      console.error('Error sending photo:', error);
+      Alert.alert('Error', 'An error occurred while sending the photo.');
+    }
+  };
+
   // Render taken photo, or camera UI
   return (
     <View style={styles.container}>
@@ -62,11 +106,7 @@ export default function CameraScreen() {
               <Text style={styles.text}>Retake Photo</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={theme.button} onPress={() => {
-              console.log('Photo confirmed:');
-            // Navigate to next screen, and send photoUri to backend  
-            // router.navigate('...')
-            }}>
+            <TouchableOpacity style={theme.button} onPress={confirmPhotoAndSend}>
               <Text style={styles.text}>Confirm Photo</Text>
             </TouchableOpacity>
 
