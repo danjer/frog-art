@@ -8,26 +8,17 @@ services:
       - "8000:8000"
     volumes:
       - chromadb_data:/chroma/data # Persistent volume for ChromaDB data
-    healthcheck: # To ensure ChromaDB is ready before FastAPI starts
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/heartbeat"]
-      interval: 10s1
-      timeout: 5s
-      retries: 5
     restart: unless-stopped # Restart policy
 
   # FastAPI Application Service
   fastapi_app:
     build:
-      context: ./api # Build context points to the fastapi_app directory
-      dockerfile: Dockerfile
+      dockerfile: ./backend/Dockerfile
     container_name: fastapi_app_container
     ports:
       - "8001:8000" # Map host port 8001 to FastAPI's internal port 8000
     volumes:
       - ./fastapi_app:/app # Mount the local fastapi_app directory into the container
-    depends_on:
-      chromadb:
-        condition: service_healthy
     environment:
       # Example: Pass ChromaDB host to FastAPI.
       # Use the service name 'chromadb' as the hostname for inter-container communication.

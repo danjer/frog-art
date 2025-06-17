@@ -1,0 +1,1 @@
+PROJECT_NAME = "frog-art-backend"
