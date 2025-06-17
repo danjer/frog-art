@@ -1,17 +1,11 @@
 from fastapi import FastAPI
-from fastapi.routing import APIRoute
 
-from api.endpoints.embeddings import router as embeddings_router
-from api.settings import PROJECT_NAME   
-
-
-def custom_generate_unique_id(route: APIRoute) -> str:
-    return f"{route.tags[0]}-{route.name}"
+from api.settings import PROJECT_NAME
+from backend.api.endpoints.compare import router as embeddings_router
 
 app = FastAPI(
     title=PROJECT_NAME,
-    openapi_url=f"/openapi.json",
-    generate_unique_id_function=custom_generate_unique_id,
+    openapi_url="/openapi.json",
 )
 
 # # Set all CORS enabled origins
