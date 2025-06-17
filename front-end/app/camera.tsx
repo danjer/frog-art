@@ -67,7 +67,7 @@ export default function CameraScreen() {
 
       console.log('Sending photo to API...', data);
       router.navigate('/');
-      const response = await fetch('http://localhost:8001/api/embeddings', {
+      const response = await fetch('http://192.168.68.115:8000/api/compare-art', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

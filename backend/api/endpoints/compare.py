@@ -10,7 +10,7 @@ router = APIRouter()
 
 @router.post("/compare-art")
 async def upload_image_base64(payload: FindComparableArt):
-    image_b64 = payload.get("image")
+    image_b64 = payload.image
     if not image_b64:
         return JSONResponse(
             status_code=400, content={"error": "Missing image_base64 field"}
