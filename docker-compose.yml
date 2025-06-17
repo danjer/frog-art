@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  chromadb:
+    image: ghcr.io/chroma-core/chroma:latest
+    container_name: chromadb_container
+    ports:
+      - "8000:8000"
+    volumes:
+      - chromadb_data:/chroma/data # Persistent volume for ChromaDB data
+    restart: unless-stopped # Restart policy
+
+  # FastAPI Application Service
+  fastapi_app:
+    build:
+      dockerfile: ./backend/Dockerfile
+    container_name: fastapi_app_container
+    ports:
+      - "8001:8000" # Map host port 8001 to FastAPI's internal port 8000
+    volumes:
+      - ./fastapi_app:/app # Mount the local fastapi_app directory into the container
+    environment:
+      # Example: Pass ChromaDB host to FastAPI.
+      # Use the service name 'chromadb' as the hostname for inter-container communication.
+      CHROMADB_HOST: http://chromadb:8000
+    restart: unless-stopped
+
+volumes:
+  chromadb_data: # Define the named volume for ChromaDB data persistence
