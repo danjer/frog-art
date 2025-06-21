@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 
 from api.settings import PROJECT_NAME
-from backend.api.endpoints.compare import router as embeddings_router
+from api.endpoints.compare import router as embeddings_router
 
 app = FastAPI(
     title=PROJECT_NAME,
