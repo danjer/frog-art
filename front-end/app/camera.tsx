@@ -4,7 +4,7 @@ import { Button, Image, StyleSheet, Text, TouchableOpacity, View, Alert } from '
 import { useRouter, useNavigation } from 'expo-router';
 import * as FileSystem from 'expo-file-system';
 import theme from './style';
-
+import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 
 export default function CameraScreen() {
   const [facing, setFacing] = useState<CameraType>('back');
@@ -102,12 +102,12 @@ export default function CameraScreen() {
           <Image source={{ uri: photoUri }} style={styles.previewImage} />
 
           <View style={styles.buttonContainer}>
-            <TouchableOpacity style={theme.button} onPress={retakePhoto}>
-              <Text style={styles.text}>Retake Photo</Text>
+            <TouchableOpacity style={styles.navButton} onPress={retakePhoto}>
+		<FontAwesome6 name="arrow-left" size={40} color="white" />
             </TouchableOpacity>
 
-            <TouchableOpacity style={theme.button} onPress={confirmPhotoAndSend}>
-              <Text style={styles.text}>Confirm Photo</Text>
+            <TouchableOpacity style={styles.navButton} onPress={confirmPhotoAndSend}>
+		<FontAwesome6 name="circle-check" size={40} color="white" />
             </TouchableOpacity>
 
           </View>
@@ -115,16 +115,16 @@ export default function CameraScreen() {
       ) : (
         <CameraView style={styles.camera} facing={facing} ref={cameraRef}>
           <View style={styles.buttonContainer}>
-            <TouchableOpacity style={theme.button} onPress={toggleCameraFacing}>
-              <Text style={styles.text}>Flip Camera</Text>
+
+            <TouchableOpacity style={styles.navButton} onPress={() => router.navigate('/')}>
+	<FontAwesome6 name="arrow-left" size={40} color="white" />
             </TouchableOpacity>
 
-            <TouchableOpacity style={theme.button} onPress={takePhoto}>
-              <Text style={styles.text}>Take Photo</Text>
+            <TouchableOpacity style={styles.cameraButton} onPress={takePhoto}>
             </TouchableOpacity>
 
-            <TouchableOpacity style={theme.button} onPress={() => router.navigate('/')}>
-              <Text style={styles.cameraText}>Close Camera</Text>
+            <TouchableOpacity style={styles.navButton} onPress={toggleCameraFacing}>
+		<FontAwesome6 name="arrows-rotate" size={40} color="white" />
             </TouchableOpacity>
           </View>
         </CameraView>
@@ -161,6 +161,32 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.5)',
     padding: 10,
     borderRadius: 5,
+  },
+  cameraButton: {
+    width: 75,
+    height: 75,
+    marginBottom: 30,
+    backgroundColor: 'white',
+    padding: 10,
+    borderRadius: 100,
+    borderColor: 'white',
+    borderWidth: 3,
+    boxShadow: '0px 0px 0px 2px black inset',
+  },
+  navButton: {
+    width: 50,
+    height: 50,
+    flex: 0.5,
+    marginBottom: 40,
+    alignItems: 'center',
+    alignSelf: 'flex-end',
+    flexDirection: 'row',
+    justifyContent: 'center',
+  },
+  rotateIcon: {
+    width: 40,
+    height: 40,
+    resizeMode: 'contain',
   },
   text: {
     fontSize: 18,

@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Text, Image, View, StyleSheet, TouchableOpacity } from 'react-native';
+import { Image, View, StyleSheet, TouchableOpacity } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import theme from '../app/style';
+// import theme from '../app/style';
+import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 
 export default function PhotoPicker() {
   const [image, setImage] = useState<string | null>(null);
@@ -24,8 +25,9 @@ export default function PhotoPicker() {
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity style={theme.button} onPress={pickImage}>
-        <Text style={theme.buttonText}>Photo Library</Text>
+      <TouchableOpacity style={styles.libraryBtn} onPress={pickImage}>
+	<FontAwesome6 name="paperclip" size={32} color="white" />
+        {/* <Text style={theme.buttonText}>Photo Library</Text> */}
       </TouchableOpacity>
       {image && <Image source={{ uri: image }} style={styles.image} />}
     </View>
@@ -34,16 +36,19 @@ export default function PhotoPicker() {
 
 const styles = StyleSheet.create({
   container: {
-    // This container might need some styling if you want to control the layout of the
-    // button and the image, e.g., if you want the image below the button.
-    // flex: 1, // Uncomment if you want this container to take up available space
-    alignItems: 'center', // Center content horizontally within PhotoPicker
-    justifyContent: 'center', // Center content vertically within PhotoPicker
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   image: {
     width: 200,
     height: 200,
-    marginTop: 20, // Add some space between the button and the image
-    borderRadius: 10, // Optional: make image corners rounded
+    marginTop: 20,
+    borderRadius: 10,
+  },
+
+  libraryBtn: {
+	backgroundColor: '#c3a920',
+	borderRadius: '50%',
+	padding: '10px',
   },
 });
