@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   chromadb:
@@ -22,7 +22,7 @@ services:
     environment:
       # Example: Pass ChromaDB host to FastAPI.
       # Use the service name 'chromadb' as the hostname for inter-container communication.
-      CHROMADB_HOST: http://chromadb:8000
+      CHROMADB_HOST: chromadb
     restart: unless-stopped
 
 volumes:
