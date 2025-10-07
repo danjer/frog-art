@@ -2,8 +2,7 @@ import base64
 import io
 import re
 
-import numpy as np
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 from PIL import Image
 
@@ -13,8 +12,11 @@ router = APIRouter()
 
 
 @router.post("/compare-art")
-async def upload_image_base64(payload: FindComparableArt):
+async def upload_image_base64(request: Request, payload: FindComparableArt):
+    embedder = request.app.embedder  # Ensure the model is loaded
+    chroma_collection = request.app.chroma_collection
     image_b64 = payload.image
+
     if not image_b64:
         return JSONResponse(
             status_code=400, content={"error": "Missing image_base64 field"}
@@ -24,22 +26,13 @@ async def upload_image_base64(payload: FindComparableArt):
         image_bytes = base64.b64decode(image_data)
         image = Image.open(io.BytesIO(image_bytes))
 
-        # To print a simple ASCII representation to the terminal:
-        try:
-            chars = np.asarray(list(" .:-=+*%@#"))
-            img_gray = image.convert("L").resize((80, 40))
-            img_np = np.array(img_gray)
-            img_norm = (img_np - img_np.min()) / (np.ptp(img_np) + 1e-6)
-            img_idx = (img_norm * (len(chars) - 1)).astype(int)
-            ascii_art = "\n".join(
-                "".join(chars[c] for c in row) for row in img_idx
-            )
-            print(ascii_art)
-        except ImportError:
-            print("numpy is required for ASCII art rendering.")
-        # Process image_bytes as needed, e.g., extract embeddings
-        # result = your_embedding_function(image_bytes)
-        result = {"message": "Image received and decoded successfully"}
-        return result
+        embedding = embedder.embed_image(image)
+
+        # Example of querying ChromaDB with the embedding
+        comparable_ids = chroma_collection.query(
+            query_embeddings=embedding, n_results=3
+        )["ids"]
+
+        return {"comparable_ids": comparable_ids}
     except Exception as e:
         return JSONResponse(status_code=400, content={"error": str(e)})
