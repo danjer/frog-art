@@ -3,7 +3,7 @@ import os
 
 import chromadb
 import numpy as np
-from model import EmbeddingModel
+from api.utils.model import EmbeddingModel
 from tqdm import tqdm
 
 
