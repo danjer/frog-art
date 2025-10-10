@@ -9,6 +9,16 @@ services:
     volumes:
       - chromadb_data:/chroma/data # Persistent volume for ChromaDB data
     restart: unless-stopped # Restart policy
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq_container
+    ports:
+      - "5672:5672"   # RabbitMQ broker port
+      - "15672:15672" # Management dashboard
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    restart: unless-stopped
 
   # FastAPI Application Service
   fastapi_app:
@@ -17,12 +27,22 @@ services:
     container_name: fastapi_app_container
     ports:
       - "8001:8000" # Map host port 8001 to FastAPI's internal port 8000
-    volumes:
-      - ./fastapi_app:/app # Mount the local fastapi_app directory into the container
     environment:
       # Example: Pass ChromaDB host to FastAPI.
       # Use the service name 'chromadb' as the hostname for inter-container communication.
       CHROMADB_HOST: chromadb
+    restart: unless-stopped
+  async_worker:
+    build:
+      dockerfile: ./backend/Dockerfile
+    container_name: async_worker_container
+    environment:
+      CELERY_BROKER_URL: pyamqp://guest@rabbitmq//
+      CHROMADB_HOST: chromadb
+    depends_on:
+      - rabbitmq
+      - chromadb
+    command: poetry run celery -A api worker --loglevel info --beat
     restart: unless-stopped
 
 volumes:
