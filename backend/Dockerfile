@@ -1,4 +1,4 @@
-FROM python:3.12    
+FROM python:3.12
 
 # to do: update path
 COPY backend /backend

@@ -1,22 +1,21 @@
-import os
 from contextlib import asynccontextmanager
 
 import chromadb
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from utils.model import EmbeddingModel
+from api.utils.model import EmbeddingModel
 
 from api.endpoints.compare import router as embeddings_router
 from api.settings import PROJECT_NAME, settings
-
-CHROMADB_HOST = os.environ.get("CHROMADB_HOST", "localhost")
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Load the ML model
     app.embedder = EmbeddingModel()
-    app.chroma_client = chromadb.HttpClient(host=CHROMADB_HOST, port=8000)
+    app.chroma_client = chromadb.HttpClient(
+        host=settings.chromadb_host, port=settings.chromadb_port
+    )
     app.chroma_collection = app.chroma_client.get_or_create_collection(
         "embeddings", embedding_function=None
     )

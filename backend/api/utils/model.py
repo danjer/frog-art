@@ -1,9 +1,17 @@
+from abc import abstractmethod, ABC
 from pathlib import Path
 
 import numpy as np
+from io import BytesIO
 import torch
 from PIL import Image
 from transformers import AutoImageProcessor, AutoModel
+
+
+class EmbeddingModelInterface(ABC):
+    @abstractmethod
+    def embed_image(self, image: str | Path | Image.Image | np.ndarray | BytesIO) -> np.ndarray:
+        raise NotImplementedError
 
 
 class EmbeddingModel:
@@ -19,7 +27,7 @@ class EmbeddingModel:
         Loads an image and processes it using the model's image processor.
         Reusable helper function for single and batch image processing.
         """
-        if isinstance(image, str) or isinstance(image, Path):
+        if isinstance(image, str) or isinstance(image, Path) or isinstance(image, BytesIO):
             image = Image.open(image)
         elif isinstance(image, np.ndarray):
             image = Image.fromarray(image)
@@ -41,7 +49,7 @@ class EmbeddingModel:
             outputs = self.model(pixel_values=image)
         return outputs.pooler_output
 
-    def embed_image(self, image):
+    def embed_image(self, image: str | Path | Image.Image | np.ndarray):
         """
         Embeds a single image by first loading and processing it, then passing it to the model.
         """
