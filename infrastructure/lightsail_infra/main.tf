@@ -15,7 +15,7 @@ resource "aws_lightsail_instance" "frog-art-api" {
   name              = "frog-art-api"
   availability_zone = "us-east-1a"
   blueprint_id      = "amazon_linux_2" 
-  bundle_id         = "nano_2_0"    
+  bundle_id         = "medium_3_0"
   user_data         = file("setup.sh")
 }
 
