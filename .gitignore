@@ -177,3 +177,5 @@ cython_debug/
 
 art-images/
 .DS_Store
+images/
+.vscode/

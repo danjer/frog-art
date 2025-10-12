@@ -1,35 +1,28 @@
-[tool.poetry]
-name = "frog-art"
-version = "0.1.94"
-description = "Searches for similar images locally"
-authors = ["tikendraw <tikendraksahu1029@gmail.com>"]
+[project]
+name = "api"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Rutger van de Leur",email = "rutgervandeleur@gmail.com"}
+]
 packages = [
-    { include = "api" },
+    { include = "api"},
+]
+requires-python = ">=3.11.10,<3.14"
+dependencies = [
+
+    "fastapi[standard] (>=0.118.0,<0.119.0)",
+    "chromadb (>=1.1.1,<2.0.0)",
+    "numpy (>=2.3.3,<3.0.0)",
+    "uvicorn (>=0.37.0,<0.38.0)",
+    "transformers[torch] (==4.56.0)",
+    "torchvision (>=0.23.0,<0.24.0)",
+    "torch (>=2.8.0,<3.0.0)",
+    "requests (>=2.32.5,<3.0.0)",
+    "celery (>=5.5.3,<6.0.0)",
 ]
 
-[tool.poetry.dependencies]
-python = "^3.10"
-chromadb = "0.5.12"
-streamlit = "^1.39.0"
-click = "^8.1.7"
-chafa-py = "^1.2.0"
-pyperclip = "^1.9.0"
-transformers = "^4.46.3"
-torch = "^2.5.1"
-pydantic = "^2.10.4"
-magickwand = "^0.2"
-fastapi = {extras = ["standard"], version = "^0.115.13"}
-
-
-[tool.poetry.group.dev.dependencies]
-ipykernel = "^6.29.5"
-matplotlib = "^3.9.2"
-pytest = "^8.3.3"
 
 [build-system]
-requires = ["poetry-core"]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
-
-[tool.poetry.scripts]
-image_search = 'launch:launch'
-image_search_cli = 'v2.cli:cli_func'
