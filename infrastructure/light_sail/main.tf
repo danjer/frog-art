@@ -1,35 +1,33 @@
-terraform {
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 5.0"
-    }
+terraform{
+  # Store state in S3 so it is shared
+  backend "s3" {
+    bucket = "frog-art-terraform"
+    key    = "terraform.tfstate"
+    region = "us-east-1"
   }
-
-  required_version = ">= 1.3.0"
 }
 
 provider "aws" {
-  region = "us-east-1" # or your preferred region
+  region = "us-east-1"
 }
 
-resource "aws_lightsail_instance" "prototype" {
-  name              = "docker-prototype"
+resource "aws_lightsail_instance" "frog-art-api" {
+  name              = "frog-art-api"
   availability_zone = "us-east-1a"
-  blueprint_id      = "amazon_linux_2" # base image
-  bundle_id         = "nano_2_0"       # cheapest plan (~$5/month)
-  user_data         = file("user_data.sh")
+  blueprint_id      = "amazon_linux_2" 
+  bundle_id         = "nano_2_0"    
+  user_data         = file("setup.sh")
 }
 
-resource "aws_lightsail_static_ip" "prototype_ip" {
-  name = "prototype-ip"
+resource "aws_lightsail_static_ip" "frog-art-api_ip" {
+  name = "frog-art-api-ip"
 }
 
-resource "aws_lightsail_static_ip_attachment" "prototype_ip_attach" {
-  static_ip_name = aws_lightsail_static_ip.prototype_ip.name
-  instance_name  = aws_lightsail_instance.prototype.name
+resource "aws_lightsail_static_ip_attachment" "frog-art-api_ip_attach" {
+  static_ip_name = aws_lightsail_static_ip.frog-art-api_ip.name
+  instance_name  = aws_lightsail_instance.frog-art-api.name
 }
 
 output "public_ip" {
-  value = aws_lightsail_static_ip.prototype_ip.ip_address
+  value = aws_lightsail_static_ip.frog-art-api_ip.ip_address
 }
