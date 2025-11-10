@@ -1,4 +1,4 @@
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { useRouter, useLocalSearchParams, Link } from "expo-router";
 import {
   Image,
   StyleSheet,
@@ -12,6 +12,7 @@ import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import { useState } from "react";
 
 const screenWidth = Dimensions.get("window").width;
+const screenHeight = Dimensions.get("window").height;
 
 export default function ResultScreen() {
   const params = useLocalSearchParams();
@@ -21,6 +22,34 @@ export default function ResultScreen() {
   const [activeIndex, setActiveIndex] = useState(0);
 
   let parsedImages = [];
+
+  const no_results = "https://upload.wikimedia.org/wikipedia/commons/4/4d/Cat_November_2010-1a.jpg";
+  const HARDCODED_IMAGES = [
+  {
+    url: "https://picsum.photos/id/237/800/800",
+    name: "A sad looking dog",
+    artist: "Jan Janssen",
+    purchaseLink: "https://example.com/link-a",
+  },
+  {
+    url: "https://picsum.photos/id/238/800/800",
+    name: "The Big Apple",
+    artist: "Henk de Vries",
+    purchaseLink: "https://example.com/link-b",
+  },
+  {
+    url: "https://picsum.photos/id/239/800/800",
+    name: "Dandelion",
+    artist: "Kees de Boer",
+    purchaseLink: "https://example.com/link-c",
+  },
+];
+
+    if (!params.imageUrls || params.imageUrls === 'null') {
+    // If no image data is passed via navigation parameters, use hardcoded
+    console.log("No API data found, using hardcoded images for development.");
+    parsedImages = HARDCODED_IMAGES;
+    } else {
 
   try {
     if (params.imageUrls) {
@@ -37,6 +66,18 @@ export default function ResultScreen() {
   } catch (e) {
     console.error("Failed to parse image URLs:", e);
   }
+	};
+
+  if(parsedImages.length === 0) {
+    console.log("No images found, using fallback.");
+    parsedImages.push({
+      url: no_results,
+      // You can add default text for this fallback image if needed
+      name: "No Results Found",
+      artist: "Please try a different search.",
+      purchaseLink: "",
+    });
+  }
 
   const handleScroll = (event) => {
     const contentOffsetX = event.nativeEvent.contentOffset.x;
@@ -50,11 +91,12 @@ export default function ResultScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>
-          Results ({activeIndex + 1}/{parsedImages.length})
-        </Text>
-      </View>
+
+      {/* <View style={styles.header}> */}
+      {/*   <Text style={styles.title}> */}
+      {/*     Results ({activeIndex + 1}/{parsedImages.length}) */}
+      {/*   </Text> */}
+      {/* </View> */}
 
       {parsedImages.length > 0 ? (
         <>
@@ -82,9 +124,10 @@ export default function ResultScreen() {
           <View style={styles.detailsContainer}>
             <Text style={styles.detailTitle}>{activeDetails.name}</Text>
             <Text style={styles.detailText}>{activeDetails.artist}</Text>
-            <Text style={[styles.detailText, styles.linkText]}>
-              {activeDetails.purchaseLink}
-            </Text>
+            {/* <Text style={[styles.detailText, styles.linkText]}> */}
+            {/*   {activeDetails.purchaseLink} */}
+            {/* </Text> */}
+	    <Link style={styles.moreInfoLink} href="/modal" >More Details</Link>
           </View>
         </>
       ) : (
@@ -129,14 +172,14 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     width: screenWidth,
-    height: "100%",
+    height: screenHeight * 0.7,
     justifyContent: "center",
     alignItems: "center",
-    padding: 20,
+    padding: 10,
   },
   highlightedImage: {
     width: "100%",
-    height: "500px",
+    height: "100%",
     borderRadius: 12,
     backgroundColor: "#f0f0f0",
   },
@@ -160,6 +203,11 @@ const styles = StyleSheet.create({
     color: "#007AFF",
     marginTop: 10,
     fontWeight: "500",
+  },
+  moreInfoLink: {
+    marginTop: 20,
+    fontSize: 18,
+    textAlign: "center",
   },
   emptyContainer: {
     flex: 1,
