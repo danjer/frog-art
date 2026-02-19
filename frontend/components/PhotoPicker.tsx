@@ -1,35 +1,79 @@
 import { useState } from 'react';
-import { Image, View, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-// import theme from '../app/style';
+import * as FileSystem from 'expo-file-system';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
+import { useRouter } from 'expo-router';
+
+const API_URL = 'http://localhost:80/api/compare-art';
 
 export default function PhotoPicker() {
-  const [image, setImage] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
   const pickImage = async () => {
-    // No permissions request is necessary for launching the image library
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images', 'videos'],
+    const pickerResult = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
       allowsEditing: true,
       aspect: [4, 3],
-      quality: 1,
+      quality: 0.8,
+      base64: true,
     });
 
-    console.log(result);
+    if (pickerResult.canceled) return;
 
-    if (!result.canceled) {
-      setImage(result.assets[0].uri);
+    const asset = pickerResult.assets[0];
+    let base64Data = asset.base64;
+
+    if (!base64Data && asset.uri) {
+      try {
+        base64Data = await FileSystem.readAsStringAsync(asset.uri, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
+      } catch (e) {
+        Alert.alert('Error', 'Could not read image file.');
+        return;
+      }
+    }
+
+    if (!base64Data) {
+      Alert.alert('Error', 'Could not get image data.');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: base64Data }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        router.navigate({
+          pathname: '/result',
+          params: { imageUrls: JSON.stringify(data) },
+        });
+      } else {
+        const errorData = await response.text();
+        Alert.alert('Error', `Failed to upload photo: ${response.status} - ${errorData}`);
+      }
+    } catch (error) {
+      Alert.alert('Error', 'An error occurred while sending the photo.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity style={styles.libraryBtn} onPress={pickImage}>
-	<FontAwesome6 name="paperclip" size={32} color="white" />
-        {/* <Text style={theme.buttonText}>Photo Library</Text> */}
+      <TouchableOpacity style={styles.libraryBtn} onPress={pickImage} disabled={isLoading}>
+        {isLoading
+          ? <ActivityIndicator color="white" size="small" />
+          : <FontAwesome6 name="paperclip" size={32} color="white" />
+        }
       </TouchableOpacity>
-      {image && <Image source={{ uri: image }} style={styles.image} />}
     </View>
   );
 }
@@ -39,16 +83,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  image: {
-    width: 200,
-    height: 200,
-    marginTop: 20,
-    borderRadius: 10,
-  },
-
   libraryBtn: {
-	backgroundColor: '#c3a920',
-	borderRadius: '50%',
-	padding: '10px',
+    backgroundColor: '#c3a920',
+    borderRadius: 50,
+    padding: 20,
   },
 });

@@ -9,33 +9,33 @@ import {
   View,
   Alert,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 import { useRouter, useNavigation } from "expo-router";
 import * as FileSystem from "expo-file-system";
-import theme from "./style";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
+
+const API_URL = "http://localhost:80/api/compare-art";
 
 export default function CameraScreen() {
   const [facing, setFacing] = useState<CameraType>("back");
   const [permission, requestPermission] = useCameraPermissions();
-  const [photoUri, setPhotoUri] = useState<string | null>(null); // State to store the taken photo URI
+  const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [photoBase64, setPhotoBase64] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const cameraRef = useRef<CameraView>(null);
   const router = useRouter();
   const navigation = useNavigation();
 
   useEffect(() => {
-    // hide the header when using camera
     navigation.setOptions({ headerShown: false });
   }, [navigation]);
 
   if (!permission) {
-    // Camera permissions are still loading.
     return <View />;
   }
 
   if (!permission.granted) {
-    // Camera permissions are not granted yet.
     return (
       <View style={styles.container}>
         <Image source={require("../assets/images/react-logo.png")} />
@@ -54,18 +54,16 @@ export default function CameraScreen() {
   const takePhoto = async () => {
     if (cameraRef.current) {
       const photo = await cameraRef.current.takePictureAsync({
-        base64: true, // Request base64 data for all platforms
+        base64: true,
         quality: 0.8,
       });
-      //const photo = await cameraRef.current.takePictureAsync();
       setPhotoUri(photo.uri);
-      setPhotoBase64(photo.base64); // this is needed for web dev
-      console.log("Photo taken:", photo.uri);
+      setPhotoBase64(photo.base64);
     }
   };
 
   const retakePhoto = () => {
-    setPhotoUri(null); // Clear the photo URI to show the camera again
+    setPhotoUri(null);
     setPhotoBase64(null);
   };
 
@@ -79,7 +77,6 @@ export default function CameraScreen() {
 
     if (Platform.OS !== "web" && !base64Data) {
       try {
-        // This is safe because it only runs on native (iOS/Android)
         base64Data = await FileSystem.readAsStringAsync(photoUri, {
           encoding: FileSystem.EncodingType.Base64,
         });
@@ -95,69 +92,64 @@ export default function CameraScreen() {
       return;
     }
 
+    setIsLoading(true);
     try {
-      // Expo neemt foto van device en convert naar base64
-      //const base64 = await FileSystem.readAsStringAsync(photoUri, { encoding: FileSystem.EncodingType.Base64 });
-
-      const data = {
-        image: base64Data,
-        //image: `data:image/jpeg;base64,${base64}`,
-      };
-
-      console.log("Sending photo to API...", data);
-      const response = await fetch("http://localhost:8001/api/compare-art", {
+      const response = await fetch(API_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ image: base64Data }),
       });
 
       if (response.ok) {
         const result = await response.json();
-        console.log("Photo uploaded successfully:", result);
-        Alert.alert("Success", "Photo uploaded successfully!");
-
-        setPhotoUri(null); // Clear photo URI
+        setPhotoUri(null);
         setPhotoBase64(null);
-
         router.navigate({
           pathname: "/result",
           params: {
-            imageUrls: JSON.stringify(result), // Pass the array as a JSON string
+            imageUrls: JSON.stringify(result),
           },
         });
       } else {
-        // Als het naar de klote gaat
         const errorData = await response.text();
         console.error("Failed to upload photo:", response.status, errorData);
         Alert.alert(
           "Error",
-          `Failed to upload photo: ${response.status} - ${errorData}`
+          `Failed to upload photo: ${response.status} - ${errorData}`,
         );
-        router.navigate("/");
       }
     } catch (error) {
       console.error("Error sending photo:", error);
       Alert.alert("Error", "An error occurred while sending the photo.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Render taken photo, or camera UI
   return (
     <View style={styles.container}>
+      {isLoading && (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color="white" />
+          <Text style={styles.loadingText}>Analyzing artwork...</Text>
+        </View>
+      )}
+
       {photoUri ? (
         <View style={styles.previewContainer}>
           <Image source={{ uri: photoUri }} style={styles.previewImage} />
 
           <View style={styles.buttonContainer}>
-            <TouchableOpacity style={styles.navButton} onPress={retakePhoto}>
+            <TouchableOpacity style={styles.navButton} onPress={retakePhoto} disabled={isLoading}>
               <FontAwesome6 name="arrow-left" size={40} color="white" />
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.navButton}
               onPress={confirmPhotoAndSend}
+              disabled={isLoading}
             >
               <FontAwesome6 name="circle-check" size={40} color="white" />
             </TouchableOpacity>
@@ -176,7 +168,7 @@ export default function CameraScreen() {
             <TouchableOpacity
               style={styles.cameraButton}
               onPress={takePhoto}
-            ></TouchableOpacity>
+            />
 
             <TouchableOpacity
               style={styles.navButton}
@@ -194,7 +186,6 @@ export default function CameraScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    display: "flex",
   },
   message: {
     textAlign: "center",
@@ -208,17 +199,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     backgroundColor: "transparent",
     marginBottom: 64,
-    display: "flex",
     alignItems: "flex-end",
     justifyContent: "space-around",
-  },
-  button: {
-    flex: 0.5,
-    alignItems: "center",
-    alignSelf: "flex-end",
-    backgroundColor: "rgba(0,0,0,0.5)",
-    padding: 10,
-    borderRadius: 5,
   },
   cameraButton: {
     width: 75,
@@ -241,30 +223,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
   },
-  rotateIcon: {
-    width: 40,
-    height: 40,
-    resizeMode: "contain",
-  },
-  text: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "white",
-    textAlign: "center",
-    justifyContent: "center",
-  },
-  cameraText: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "white",
-    textAlign: "center",
-    justifyContent: "center",
-  },
-  image: {
-    width: 200,
-    height: 200,
-    margin: "auto",
-  },
   previewContainer: {
     flex: 1,
     justifyContent: "center",
@@ -274,5 +232,21 @@ const styles = StyleSheet.create({
   previewImage: {
     width: "100%",
     height: "100%",
+  },
+  loadingOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0,0,0,0.7)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 10,
+  },
+  loadingText: {
+    color: "white",
+    fontSize: 18,
+    marginTop: 16,
   },
 });

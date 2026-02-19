@@ -1,4 +1,4 @@
-import { useRouter, useLocalSearchParams, Link } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import {
   Image,
   StyleSheet,
@@ -8,23 +8,12 @@ import {
   Dimensions,
   TouchableOpacity,
 } from "react-native";
-import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import { useState } from "react";
 
 const screenWidth = Dimensions.get("window").width;
 const screenHeight = Dimensions.get("window").height;
 
-export default function ResultScreen() {
-  const params = useLocalSearchParams();
-  const router = useRouter();
-
-  // State to track which image index is currently centered
-  const [activeIndex, setActiveIndex] = useState(0);
-
-  let parsedImages = [];
-
-  const no_results = "https://upload.wikimedia.org/wikipedia/commons/4/4d/Cat_November_2010-1a.jpg";
-  const HARDCODED_IMAGES = [
+const FALLBACK_IMAGES = [
   {
     url: "https://picsum.photos/id/237/800/800",
     name: "A sad looking dog",
@@ -45,41 +34,43 @@ export default function ResultScreen() {
   },
 ];
 
-    if (!params.imageUrls || params.imageUrls === 'null') {
-    // If no image data is passed via navigation parameters, use hardcoded
-    console.log("No API data found, using hardcoded images for development.");
-    parsedImages = HARDCODED_IMAGES;
-    } else {
+export default function ResultScreen() {
+  const params = useLocalSearchParams();
+  const router = useRouter();
 
-  try {
-    if (params.imageUrls) {
-      console.log("Raw imageUrls param:", params.imageUrls);
-      const urls = JSON.parse(params.imageUrls).comparable_ids[0];
-      console.log("Parsed image URLs:", urls);
+  const [activeIndex, setActiveIndex] = useState(0);
 
-      parsedImages = urls.map((single_url) => ({
-        url: `https://digicat.kunstuitleenutrecht.nl/digicat/plaatjes/jpg/${single_url}.jpg`,
+  let parsedImages: {
+    url: string;
+    name?: string;
+    artist?: string;
+    purchaseLink?: string;
+  }[] = [];
+
+  if (!params.imageUrls || params.imageUrls === "null") {
+    parsedImages = FALLBACK_IMAGES;
+  } else {
+    try {
+      const urls = JSON.parse(params.imageUrls as string).comparable_ids[0];
+      parsedImages = urls.map((id: string) => ({
+        url: `https://digicat.kunstuitleenutrecht.nl/digicat/plaatjes/jpg/${id}.jpg`,
+        purchaseLink: `https://kunstuitleenutrecht.kunstuitleenonline.nl/item/UTR${id}`,
       }));
-
-      console.log(parsedImages);
+    } catch (e) {
+      console.error("Failed to parse image URLs:", e);
     }
-  } catch (e) {
-    console.error("Failed to parse image URLs:", e);
   }
-	};
 
-  if(parsedImages.length === 0) {
-    console.log("No images found, using fallback.");
+  if (parsedImages.length === 0) {
     parsedImages.push({
-      url: no_results,
-      // You can add default text for this fallback image if needed
+      url: "https://upload.wikimedia.org/wikipedia/commons/4/4d/Cat_November_2010-1a.jpg",
       name: "No Results Found",
-      artist: "Please try a different search.",
+      artist: "Please try a different photo.",
       purchaseLink: "",
     });
   }
 
-  const handleScroll = (event) => {
+  const handleScroll = (event: any) => {
     const contentOffsetX = event.nativeEvent.contentOffset.x;
     const newIndex = Math.round(contentOffsetX / screenWidth);
     if (newIndex !== activeIndex) {
@@ -89,52 +80,65 @@ export default function ResultScreen() {
 
   const activeDetails = parsedImages[activeIndex] || {};
 
+  const openDetails = () => {
+    router.push({
+      pathname: "/modal",
+      params: {
+        name: activeDetails.name || "",
+        artist: activeDetails.artist || "",
+        url: activeDetails.url || "",
+        purchaseLink: activeDetails.purchaseLink || "",
+      },
+    });
+  };
+
   return (
     <View style={styles.container}>
-
-      {/* <View style={styles.header}> */}
-      {/*   <Text style={styles.title}> */}
-      {/*     Results ({activeIndex + 1}/{parsedImages.length}) */}
-      {/*   </Text> */}
-      {/* </View> */}
-
-      {parsedImages.length > 0 ? (
-        <>
-          {/* image carousel */}
-          <ScrollView
-            horizontal
-            pagingEnabled // Enables snap-to-page behavior
-            showsHorizontalScrollIndicator={false}
-            onScroll={handleScroll}
-            scrollEventThrottle={16} // performance thing
-            contentContainerStyle={styles.carouselContent}
-            style={styles.carousel}
-          >
-            {parsedImages.map((item, index) => (
-              <View key={index} style={styles.imageContainer}>
-                <Image
-                  source={{ uri: item.url }}
-                  style={styles.highlightedImage}
-                  resizeMode="cover"
-                />
-              </View>
-            ))}
-          </ScrollView>
-
-          <View style={styles.detailsContainer}>
-            <Text style={styles.detailTitle}>{activeDetails.name}</Text>
-            <Text style={styles.detailText}>{activeDetails.artist}</Text>
-            {/* <Text style={[styles.detailText, styles.linkText]}> */}
-            {/*   {activeDetails.purchaseLink} */}
-            {/* </Text> */}
-	    <Link style={styles.moreInfoLink} href="/modal" >More Details</Link>
+      <ScrollView
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
+        contentContainerStyle={styles.carouselContent}
+        style={styles.carousel}
+      >
+        {parsedImages.map((item, index) => (
+          <View key={index} style={styles.imageContainer}>
+            <Image
+              source={{ uri: item.url }}
+              style={styles.highlightedImage}
+              resizeMode="cover"
+            />
           </View>
-        </>
-      ) : (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>No comparable images found.</Text>
+        ))}
+      </ScrollView>
+
+      {parsedImages.length > 1 && (
+        <View style={styles.dotsContainer}>
+          {parsedImages.map((_, index) => (
+            <View
+              key={index}
+              style={[styles.dot, index === activeIndex && styles.dotActive]}
+            />
+          ))}
         </View>
       )}
+
+      <View style={styles.detailsContainer}>
+        <Text style={styles.detailTitle}>{activeDetails.name}</Text>
+        <Text style={styles.detailText}>{activeDetails.artist}</Text>
+
+        <View style={styles.actionRow}>
+          <TouchableOpacity style={styles.retakeButton} onPress={() => router.navigate("/")}>
+            <Text style={styles.retakeText}>Retake</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.moreInfoButton} onPress={openDetails}>
+            <Text style={styles.moreInfoText}>More Details</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
     </View>
   );
 }
@@ -144,25 +148,8 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#f9f9f9",
   },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 15,
-    backgroundColor: "white",
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
-    paddingTop: 40,
-  },
-  backButton: {
-    paddingRight: 15,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#333",
-  },
   carousel: {
-    height: screenWidth * 1.1,
+    height: screenHeight * 0.65,
     backgroundColor: "#fff",
     borderBottomWidth: 1,
     borderBottomColor: "#eee",
@@ -172,7 +159,7 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     width: screenWidth,
-    height: screenHeight * 0.7,
+    height: screenHeight * 0.65,
     justifyContent: "center",
     alignItems: "center",
     padding: 10,
@@ -182,6 +169,25 @@ const styles = StyleSheet.create({
     height: "100%",
     borderRadius: 12,
     backgroundColor: "#f0f0f0",
+  },
+  dotsContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 12,
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#ccc",
+    marginHorizontal: 4,
+  },
+  dotActive: {
+    backgroundColor: "#2d409c",
+    width: 10,
+    height: 10,
+    borderRadius: 5,
   },
   detailsContainer: {
     padding: 20,
@@ -199,23 +205,32 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     color: "#444",
   },
-  linkText: {
-    color: "#007AFF",
-    marginTop: 10,
-    fontWeight: "500",
-  },
-  moreInfoLink: {
-    marginTop: 20,
-    fontSize: 18,
-    textAlign: "center",
-  },
-  emptyContainer: {
-    flex: 1,
+  actionRow: {
+    flexDirection: "row",
     justifyContent: "center",
-    alignItems: "center",
+    gap: 12,
+    marginTop: 20,
   },
-  emptyText: {
-    fontSize: 18,
-    color: "#666",
+  retakeButton: {
+    backgroundColor: "#888",
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+  },
+  retakeText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  moreInfoButton: {
+    backgroundColor: "#2d409c",
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+  },
+  moreInfoText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "600",
   },
 });
