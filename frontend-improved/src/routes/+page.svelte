@@ -7,10 +7,53 @@
   let error = $state(null);
   let isDragging = $state(false);
 
-  let cameraInput;
   let uploadInput;
 
-  function triggerCamera() { cameraInput.click(); }
+  // Camera
+  let showCamera = $state(false);
+  let videoEl = $state(null);
+  let stream = $state(null);
+
+  // Bind stream to video element whenever both are available
+  $effect(() => {
+    if (videoEl && stream) {
+      videoEl.srcObject = stream;
+    }
+  });
+
+  // Stop stream on component destroy
+  $effect(() => {
+    return () => { stream?.getTracks().forEach(t => t.stop()); };
+  });
+
+  async function openCamera() {
+    error = null;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } }
+      });
+      showCamera = true;
+    } catch {
+      error = 'Camera access denied. Use "Upload Image" to select a photo.';
+    }
+  }
+
+  function closeCamera() {
+    stream?.getTracks().forEach(t => t.stop());
+    stream = null;
+    showCamera = false;
+  }
+
+  function capturePhoto() {
+    if (!videoEl) return;
+    const canvas = document.createElement('canvas');
+    canvas.width = videoEl.videoWidth;
+    canvas.height = videoEl.videoHeight;
+    canvas.getContext('2d').drawImage(videoEl, 0, 0);
+    previewUrl = canvas.toDataURL('image/jpeg', 0.92);
+    closeCamera();
+  }
+
   function triggerUpload() { uploadInput.click(); }
 
   function handleFileSelect(event) {
@@ -35,7 +78,6 @@
   function clearImage() {
     previewUrl = null;
     error = null;
-    cameraInput.value = '';
     uploadInput.value = '';
   }
 
@@ -58,7 +100,6 @@
       }
 
       const data = await response.json();
-      // API returns comparable_ids[0] as the array of IDs
       const ids = data?.comparable_ids?.[0] ?? [];
       if (!ids.length) throw new Error('No similar artworks found.');
 
@@ -73,24 +114,75 @@
   }
 </script>
 
-<input bind:this={cameraInput} type="file" accept="image/*" capture="environment" onchange={handleFileSelect} class="hidden" />
 <input bind:this={uploadInput} type="file" accept="image/*" onchange={handleFileSelect} class="hidden" />
 
-<main class="flex flex-col px-5 pb-6 min-h-dvh">
+<!-- Camera overlay -->
+{#if showCamera}
+  <div class="fixed inset-0 z-50 bg-black flex flex-col" role="dialog" aria-label="Camera">
+
+    <!-- Top bar -->
+    <div class="flex items-center justify-between px-6 pt-12 pb-4 shrink-0">
+      <span class="text-[10px] uppercase tracking-[0.18em] text-white/40">Camera</span>
+      <button
+        onclick={closeCamera}
+        class="bg-transparent border-none text-white/50 hover:text-white transition-colors text-[11px] uppercase tracking-[0.14em] p-2 touch-manipulation"
+      >
+        Cancel
+      </button>
+    </div>
+
+    <!-- Video feed -->
+    <div class="flex-1 relative flex items-center justify-center overflow-hidden">
+      <video
+        bind:this={videoEl}
+        autoplay
+        playsinline
+        muted
+        class="w-full h-full object-cover"
+      ></video>
+
+      <!-- Viewfinder corner brackets -->
+      <div class="absolute inset-8 pointer-events-none">
+        <svg class="absolute top-0 left-0 w-10 h-10" viewBox="0 0 40 40" fill="none">
+          <path d="M2 18 L2 2 L18 2" stroke="rgba(255,255,255,0.5)" stroke-width="1.5" stroke-linecap="square"/>
+        </svg>
+        <svg class="absolute top-0 right-0 w-10 h-10" viewBox="0 0 40 40" fill="none">
+          <path d="M22 2 L38 2 L38 18" stroke="rgba(255,255,255,0.5)" stroke-width="1.5" stroke-linecap="square"/>
+        </svg>
+        <svg class="absolute bottom-0 left-0 w-10 h-10" viewBox="0 0 40 40" fill="none">
+          <path d="M2 22 L2 38 L18 38" stroke="rgba(255,255,255,0.5)" stroke-width="1.5" stroke-linecap="square"/>
+        </svg>
+        <svg class="absolute bottom-0 right-0 w-10 h-10" viewBox="0 0 40 40" fill="none">
+          <path d="M22 38 L38 38 L38 22" stroke="rgba(255,255,255,0.5)" stroke-width="1.5" stroke-linecap="square"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Shutter -->
+    <div class="flex flex-col items-center gap-3 pb-14 pt-8 shrink-0">
+      <button
+        onclick={capturePhoto}
+        aria-label="Capture photo"
+        class="w-[68px] h-[68px] rounded-full border-2 border-white flex items-center justify-center touch-manipulation active:scale-90 transition-transform"
+      >
+        <span class="w-[52px] h-[52px] rounded-full bg-white block"></span>
+      </button>
+      <span class="text-[10px] uppercase tracking-[0.16em] text-white/30">Tap to capture</span>
+    </div>
+
+  </div>
+{/if}
+
+<main class="flex flex-col px-6 pb-10 min-h-dvh">
 
   <!-- Header -->
-  <header class="flex items-center gap-3 pt-12 pb-8">
-    <div class="shrink-0">
-      <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-        <circle cx="14" cy="14" r="13" stroke="#c3a920" stroke-width="1.5"/>
-        <circle cx="14" cy="14" r="6" fill="#c3a920" opacity="0.3"/>
-        <circle cx="14" cy="14" r="2.5" fill="#c3a920"/>
-      </svg>
+  <header class="pt-14 pb-8">
+    <div class="flex items-center gap-2 mb-4">
+      <span class="block w-1.5 h-1.5 bg-gold rounded-full"></span>
+      <span class="text-[10px] uppercase tracking-[0.18em] text-gold">Kunstuitleen Utrecht</span>
     </div>
-    <div>
-      <h1 class="text-[22px] font-normal tracking-[0.04em] text-ink">Art Finder</h1>
-      <p class="text-[11px] uppercase tracking-[0.12em] text-gold mt-0.5">Kunstuitleen Utrecht</p>
-    </div>
+    <h1 class="text-[32px] font-normal tracking-[0.05em] uppercase text-ink leading-none">Art Finder</h1>
+    <div class="mt-5 h-px bg-border"></div>
   </header>
 
   <!-- Content -->
@@ -99,32 +191,45 @@
     {#if !previewUrl}
       <!-- Drop zone -->
       <div
-        class="border border-dashed rounded-2xl py-12 px-6 flex flex-col items-center gap-5 text-center transition-colors {isDragging ? 'border-gold bg-gold/5' : 'border-border-2 bg-white/[0.02]'}"
+        class="flex flex-col items-center gap-6 text-center py-14 px-8 border transition-colors {isDragging ? 'border-gold bg-gold/5' : 'border-border bg-white/60'}"
         role="region"
         aria-label="Image drop zone"
         ondragover={(e) => { e.preventDefault(); isDragging = true; }}
         ondragleave={() => isDragging = false}
         ondrop={handleDrop}
       >
-        <div class="opacity-70">
-          <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
-            <rect x="8" y="14" width="48" height="36" rx="4" stroke="#c3a920" stroke-width="1.5" stroke-dasharray="4 3"/>
-            <circle cx="22" cy="27" r="5" stroke="#c3a920" stroke-width="1.5"/>
-            <path d="M8 38 L20 28 L30 36 L40 26 L56 40" stroke="#c3a920" stroke-width="1.5" stroke-linejoin="round"/>
-          </svg>
-        </div>
-        <p class="text-[15px] leading-relaxed text-muted max-w-[280px]">
+        <svg width="72" height="72" viewBox="0 0 72 72" fill="none" class="opacity-50">
+          <path d="M8 20 L8 8 L20 8" stroke="#7A5C14" stroke-width="1.5" fill="none" stroke-linecap="square"/>
+          <path d="M52 8 L64 8 L64 20" stroke="#7A5C14" stroke-width="1.5" fill="none" stroke-linecap="square"/>
+          <path d="M8 52 L8 64 L20 64" stroke="#7A5C14" stroke-width="1.5" fill="none" stroke-linecap="square"/>
+          <path d="M52 64 L64 64 L64 52" stroke="#7A5C14" stroke-width="1.5" fill="none" stroke-linecap="square"/>
+          <rect x="24" y="28" width="24" height="17" rx="1.5" stroke="#7A5C14" stroke-width="1.2"/>
+          <circle cx="36" cy="36" r="4.5" stroke="#7A5C14" stroke-width="1.2"/>
+          <path d="M30 28 L32 24 L40 24 L42 28" stroke="#7A5C14" stroke-width="1.2" stroke-linejoin="round"/>
+        </svg>
+        <p class="text-[14px] leading-relaxed text-muted max-w-[260px] italic">
           Point your camera at any artwork to discover similar pieces available at Kunstuitleen Utrecht
         </p>
       </div>
 
+      {#if error}
+        <div class="flex items-center gap-2.5 border border-danger/40 py-3.5 px-4 text-sm text-danger leading-snug">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" class="shrink-0">
+            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.8"/>
+            <line x1="12" y1="8" x2="12" y2="12" stroke="currentColor" stroke-width="1.8"/>
+            <line x1="12" y1="16" x2="12.01" y2="16" stroke="currentColor" stroke-width="2"/>
+          </svg>
+          {error}
+        </div>
+      {/if}
+
       <!-- Buttons -->
       <div class="flex flex-col gap-3">
         <button
-          onclick={triggerCamera}
-          class="flex items-center justify-center gap-2.5 bg-gold text-surface border-none rounded-[14px] py-[18px] px-6 text-base font-semibold tracking-[0.02em] w-full touch-manipulation active:scale-[0.98] transition-[opacity,transform]"
+          onclick={openCamera}
+          class="flex items-center justify-center gap-3 bg-ink text-surface border-none py-5 px-6 text-[12px] uppercase tracking-[0.14em] w-full touch-manipulation active:opacity-75 transition-opacity"
         >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
             <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
             <circle cx="12" cy="13" r="4" stroke="currentColor" stroke-width="1.8"/>
           </svg>
@@ -133,9 +238,9 @@
 
         <button
           onclick={triggerUpload}
-          class="flex items-center justify-center gap-2.5 bg-transparent text-ink border border-border-2 rounded-[14px] py-[17px] px-6 text-base w-full hover:border-[#555] active:scale-[0.98] transition-[border-color,transform] touch-manipulation"
+          class="flex items-center justify-center gap-3 bg-transparent text-ink border border-ink/30 py-[19px] px-6 text-[12px] uppercase tracking-[0.14em] w-full hover:border-ink/60 transition-colors touch-manipulation"
         >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
             <polyline points="17 8 12 3 7 8" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
             <line x1="12" y1="3" x2="12" y2="15" stroke="currentColor" stroke-width="1.8"/>
@@ -145,24 +250,26 @@
       </div>
 
     {:else}
-      <!-- Preview -->
-      <div class="relative rounded-2xl overflow-hidden aspect-[4/3] bg-card">
-        <img class="w-full h-full object-cover block" src={previewUrl} alt="Selected artwork" />
+      <!-- Preview — gallery mount style -->
+      <div class="relative bg-white border border-border">
+        <div class="p-5 flex items-center justify-center" style="min-height: 260px; background: #FAFAF8;">
+          <img class="block max-w-full max-h-[280px] w-auto h-auto object-contain" src={previewUrl} alt="Selected artwork" />
+        </div>
         <button
           onclick={clearImage}
           aria-label="Remove image"
-          class="absolute top-3 right-3 bg-black/70 border-none rounded-full w-9 h-9 flex items-center justify-center text-white backdrop-blur-sm hover:bg-black/90 transition-colors touch-manipulation"
+          class="absolute top-2.5 right-2.5 bg-black/60 border-none w-8 h-8 flex items-center justify-center text-white backdrop-blur-sm hover:bg-black/80 transition-colors touch-manipulation"
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-            <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2"/>
-            <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2"/>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+            <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2.5"/>
+            <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2.5"/>
           </svg>
         </button>
       </div>
 
       {#if error}
-        <div class="flex items-center gap-2.5 bg-danger/10 border border-danger/30 rounded-[10px] py-3.5 px-4 text-sm text-danger leading-snug">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="shrink-0">
+        <div class="flex items-center gap-2.5 border border-danger/40 py-3.5 px-4 text-sm text-danger leading-snug">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" class="shrink-0">
             <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.8"/>
             <line x1="12" y1="8" x2="12" y2="12" stroke="currentColor" stroke-width="1.8"/>
             <line x1="12" y1="16" x2="12.01" y2="16" stroke="currentColor" stroke-width="2"/>
@@ -176,13 +283,13 @@
         <button
           onclick={analyzeImage}
           disabled={loading}
-          class="flex items-center justify-center gap-2.5 bg-gold text-surface border-none rounded-[14px] py-[18px] px-6 text-base font-semibold tracking-[0.02em] w-full transition-[opacity,transform] active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed touch-manipulation"
+          class="flex items-center justify-center gap-3 bg-ink text-surface border-none py-5 px-6 text-[12px] uppercase tracking-[0.14em] w-full transition-opacity active:opacity-75 disabled:opacity-40 disabled:cursor-not-allowed touch-manipulation"
         >
           {#if loading}
-            <span class="w-[18px] h-[18px] border-2 border-surface/30 border-t-surface rounded-full animate-spin shrink-0"></span>
+            <span class="w-[14px] h-[14px] border border-surface/30 border-t-surface rounded-full animate-spin shrink-0"></span>
             Analysing…
           {:else}
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
               <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="1.8"/>
               <path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
             </svg>
@@ -193,17 +300,12 @@
         <button
           onclick={clearImage}
           disabled={loading}
-          class="bg-transparent border-none text-dim text-sm underline underline-offset-[3px] p-2 w-full hover:text-muted transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          class="bg-transparent border-none text-dim text-[11px] uppercase tracking-[0.1em] underline underline-offset-4 p-2 w-full hover:text-muted transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
           Choose different image
         </button>
       </div>
     {/if}
   </div>
-
-  <!-- Footer -->
-  <footer class="pt-8 text-center text-xs text-[#444]">
-    <p>Powered by <a href="https://kunstuitleenutrecht.nl" target="_blank" rel="noopener" class="text-[#666] underline underline-offset-[2px]">Kunstuitleen Utrecht</a></p>
-  </footer>
 
 </main>
