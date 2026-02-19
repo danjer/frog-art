@@ -68,6 +68,7 @@ jobs:
           username: ec2-user
           key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
           script: |
+            sudo chown -R ec2-user:ec2-user /opt/frog-art
             cd /opt/frog-art
             git pull
             docker compose up -d --build
