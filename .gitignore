@@ -179,3 +179,5 @@ art-images/
 .DS_Store
 images/
 .vscode/
+
+node_modules
