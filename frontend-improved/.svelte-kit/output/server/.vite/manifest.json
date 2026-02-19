@@ -10,17 +10,6 @@
       "_internal.js"
     ]
   },
-  "_client.js": {
-    "file": "chunks/client.js",
-    "name": "client",
-    "imports": [
-      "_state.svelte.js",
-      "_exports.js",
-      "_utils.js",
-      "_index.js",
-      "_root.js"
-    ]
-  },
   "_environment.js": {
     "file": "chunks/environment.js",
     "name": "environment"
@@ -37,7 +26,14 @@
     "file": "chunks/index.js",
     "name": "index",
     "imports": [
-      "_root.js"
+      "_index2.js"
+    ]
+  },
+  "_index2.js": {
+    "file": "chunks/index2.js",
+    "name": "index",
+    "imports": [
+      "_false.js"
     ]
   },
   "_internal.js": {
@@ -52,7 +48,7 @@
     "file": "chunks/root.js",
     "name": "root",
     "imports": [
-      "_false.js"
+      "_index2.js"
     ]
   },
   "_shared.js": {
@@ -66,8 +62,9 @@
     "file": "chunks/state.svelte.js",
     "name": "state.svelte",
     "imports": [
-      "_root.js",
-      "_exports.js"
+      "_index2.js",
+      "_exports.js",
+      "_root.js"
     ]
   },
   "_utils.js": {
@@ -106,11 +103,12 @@
     "src": "src/routes/+error.svelte",
     "isEntry": true,
     "imports": [
-      "_root.js",
-      "_client.js"
-    ],
-    "css": [
-      "_app/immutable/assets/_error.CEcwRuLW.css"
+      "_index2.js",
+      "_state.svelte.js",
+      "_exports.js",
+      "_utils.js",
+      "_index.js",
+      "_root.js"
     ]
   },
   "src/routes/+layout.svelte": {
@@ -119,11 +117,10 @@
     "src": "src/routes/+layout.svelte",
     "isEntry": true,
     "imports": [
-      "_root.js",
-      "_client.js"
+      "_index2.js"
     ],
     "css": [
-      "_app/immutable/assets/_layout.CgXsTX47.css"
+      "_app/immutable/assets/_layout.D9f9_5TW.css"
     ]
   },
   "src/routes/+page.svelte": {
@@ -132,13 +129,11 @@
     "src": "src/routes/+page.svelte",
     "isEntry": true,
     "imports": [
-      "_root.js",
+      "_index2.js",
       "_exports.js",
       "_utils.js",
+      "_root.js",
       "_state.svelte.js"
-    ],
-    "css": [
-      "_app/immutable/assets/_page.CyE38m2b.css"
     ]
   },
   "src/routes/results/+page.svelte": {
@@ -147,14 +142,12 @@
     "src": "src/routes/results/+page.svelte",
     "isEntry": true,
     "imports": [
-      "_root.js",
+      "_index2.js",
       "_exports.js",
       "_utils.js",
+      "_root.js",
       "_state.svelte.js",
       "_index.js"
-    ],
-    "css": [
-      "_app/immutable/assets/_page.CQ1XpRLp.css"
     ]
   }
 }

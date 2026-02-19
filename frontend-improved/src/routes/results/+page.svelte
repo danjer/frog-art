@@ -9,24 +9,12 @@
   const IMAGE_BASE = 'https://digicat.kunstuitleenutrecht.nl/digicat/plaatjes/jpg';
   const PURCHASE_BASE = 'https://kunstuitleenutrecht.kunstuitleenonline.nl/item/UTR';
 
-  function imageUrl(id) {
-    return `${IMAGE_BASE}/${id}.jpg`;
-  }
-
-  function purchaseUrl(id) {
-    return `${PURCHASE_BASE}${id}`;
-  }
-
-  function goBack() {
-    goto('/');
-  }
+  function imageUrl(id) { return `${IMAGE_BASE}/${id}.jpg`; }
+  function purchaseUrl(id) { return `${PURCHASE_BASE}${id}`; }
+  function goBack() { goto('/'); }
 
   let touchStartX = 0;
-
-  function onTouchStart(e) {
-    touchStartX = e.touches[0].clientX;
-  }
-
+  function onTouchStart(e) { touchStartX = e.touches[0].clientX; }
   function onTouchEnd(e) {
     const dx = e.changedTouches[0].clientX - touchStartX;
     if (Math.abs(dx) > 50) {
@@ -36,46 +24,60 @@
   }
 </script>
 
-<main>
-  <header>
-    <button class="back-btn" onclick={goBack} aria-label="Go back">
+<main class="flex flex-col px-5 pb-8 min-h-dvh">
+
+  <!-- Header -->
+  <header class="flex items-center gap-3.5 pt-12 pb-7">
+    <button
+      onclick={goBack}
+      aria-label="Go back"
+      class="bg-white/[0.06] border border-border rounded-full w-10 h-10 flex items-center justify-center text-ink shrink-0 transition-colors hover:bg-white/10 touch-manipulation"
+    >
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
         <path d="M19 12H5M12 5l-7 7 7 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     </button>
-    <div class="header-text">
-      <h1>Similar Artworks</h1>
-      <p>{ids.length} {ids.length === 1 ? 'result' : 'results'} found</p>
+    <div>
+      <h1 class="text-xl font-normal tracking-[0.03em]">Similar Artworks</h1>
+      <p class="text-xs text-gold uppercase tracking-[0.08em] mt-[3px]">
+        {ids.length} {ids.length === 1 ? 'result' : 'results'} found
+      </p>
     </div>
   </header>
 
   {#if ids.length === 0}
-    <div class="empty">
-      <p>No results. <button class="link" onclick={goBack}>Try again</button></p>
+    <div class="flex-1 flex items-center justify-center text-base text-muted">
+      <p>No results. <button onclick={goBack} class="bg-transparent border-none text-gold underline underline-offset-[3px] text-base cursor-pointer">Try again</button></p>
     </div>
   {:else}
+
     <!-- Carousel -->
     <div
-      class="carousel"
+      class="overflow-hidden rounded-[20px] shrink-0"
       role="region"
       aria-label="Artwork results"
       ontouchstart={onTouchStart}
       ontouchend={onTouchEnd}
     >
-      <div class="slides" style="transform: translateX({-activeIndex * 100}%)">
+      <div
+        class="flex will-change-transform"
+        style="transform: translateX({-activeIndex * 100}%); transition: transform 350ms cubic-bezier(0.4, 0, 0.2, 1);"
+      >
         {#each ids as id, i}
-          <article class="slide" aria-hidden={i !== activeIndex}>
-            <div class="art-image-wrap">
+          <article class="min-w-full bg-card rounded-[20px] overflow-hidden flex flex-col" aria-hidden={i !== activeIndex}>
+
+            <!-- Artwork image -->
+            <div class="h-[300px] bg-[#1e1e1e] flex items-center justify-center">
               <img
                 src={imageUrl(id)}
                 alt="Artwork {id}"
-                class="art-image"
+                class="max-w-full max-h-full w-auto h-auto object-contain block"
                 loading={i === 0 ? 'eager' : 'lazy'}
                 referrerpolicy="no-referrer"
                 onerror={(e) => { e.target.style.display = 'none'; e.target.nextElementSibling.style.display = 'flex'; }}
               />
-              <div class="art-image-fallback" style="display:none">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" opacity="0.3">
+              <div class="flex-col items-center justify-center gap-3 text-dim text-sm w-full h-full" style="display:none">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" class="opacity-30">
                   <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.5"/>
                   <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor"/>
                   <path d="M21 15l-5-5L5 21" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
@@ -84,12 +86,16 @@
               </div>
             </div>
 
-            <div class="art-info">
-              <div class="art-meta">
-                <span class="art-badge">#{i + 1} Match</span>
-                <span class="art-id">ID: {id}</span>
+            <!-- Info -->
+            <div class="p-5 flex flex-col gap-3.5">
+              <div class="flex items-center justify-between">
+                <span class="bg-gold/15 text-gold text-[11px] font-semibold uppercase tracking-[0.1em] px-2.5 py-1 rounded-md border border-gold/30">
+                  #{i + 1} Match
+                </span>
+                <span class="text-xs text-dim font-mono">ID: {id}</span>
               </div>
-              <p class="art-location">
+
+              <p class="flex items-center gap-1.5 text-[13px] text-muted">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                   <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" stroke="currentColor" stroke-width="1.5"/>
                   <circle cx="12" cy="10" r="3" stroke="currentColor" stroke-width="1.5"/>
@@ -101,7 +107,7 @@
                 href={purchaseUrl(id)}
                 target="_blank"
                 rel="noopener noreferrer"
-                class="btn-kunstuitleen"
+                class="flex items-center justify-center gap-2.5 bg-gold text-surface rounded-xl py-4 px-5 text-[15px] font-semibold tracking-[0.02em] hover:opacity-90 active:scale-[0.97] transition-[opacity,transform] touch-manipulation"
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                   <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
@@ -116,12 +122,11 @@
       </div>
     </div>
 
-    <!-- Dots -->
-    <div class="dots" role="tablist" aria-label="Artwork navigation">
+    <!-- Dot navigation -->
+    <div class="flex justify-center gap-2 py-4 pb-1" role="tablist" aria-label="Artwork navigation">
       {#each ids as _, i}
         <button
-          class="dot"
-          class:active={i === activeIndex}
+          class="rounded-full border-none p-0 cursor-pointer transition-[background,transform] touch-manipulation {i === activeIndex ? 'w-4 h-1.5 bg-gold rounded-full' : 'w-1.5 h-1.5 bg-border-2'}"
           onclick={() => activeIndex = i}
           role="tab"
           aria-selected={i === activeIndex}
@@ -130,21 +135,24 @@
       {/each}
     </div>
 
-    <!-- Swipe hint -->
     {#if ids.length > 1}
-      <p class="swipe-hint">Swipe to see more results</p>
+      <p class="text-center text-xs text-[#444] tracking-[0.05em] pb-2">Swipe to see more results</p>
     {/if}
 
     <!-- Your photo -->
     {#if sourceImage}
-      <div class="your-photo-section">
-        <h2>Your photo</h2>
-        <img src={sourceImage} alt="Your uploaded artwork" class="your-photo" />
+      <div class="mt-2 flex flex-col gap-3">
+        <h2 class="text-sm font-normal uppercase tracking-[0.08em] text-dim">Your photo</h2>
+        <img src={sourceImage} alt="Your uploaded artwork" class="w-full rounded-xl object-cover max-h-[180px] brightness-[0.85]" />
       </div>
     {/if}
 
-    <div class="footer-actions">
-      <button class="btn-secondary" onclick={goBack}>
+    <!-- Footer action -->
+    <div class="mt-4">
+      <button
+        onclick={goBack}
+        class="flex items-center justify-center gap-2.5 bg-transparent text-ink border border-border rounded-[14px] py-[17px] px-6 text-[15px] w-full hover:border-[#444] active:scale-[0.98] transition-[border-color,transform] touch-manipulation"
+      >
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
           <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
           <circle cx="12" cy="13" r="4" stroke="currentColor" stroke-width="1.8"/>
@@ -152,282 +160,6 @@
         Scan another artwork
       </button>
     </div>
+
   {/if}
 </main>
-
-<style>
-  main {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    padding: 0 20px 32px;
-    min-height: 100dvh;
-  }
-
-  /* Header */
-  header {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 48px 0 28px;
-  }
-
-  .back-btn {
-    background: rgba(255,255,255,0.06);
-    border: 1px solid #2a2a2a;
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #f0ede6;
-    flex-shrink: 0;
-    transition: background 0.15s;
-    -webkit-tap-highlight-color: transparent;
-  }
-
-  .back-btn:hover {
-    background: rgba(255,255,255,0.1);
-  }
-
-  .header-text h1 {
-    font-size: 20px;
-    font-weight: 400;
-    letter-spacing: 0.03em;
-  }
-
-  .header-text p {
-    font-size: 12px;
-    color: #c3a920;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    margin-top: 3px;
-  }
-
-  /* Carousel */
-  .carousel {
-    overflow: hidden;
-    border-radius: 20px;
-    flex-shrink: 0;
-  }
-
-  .slides {
-    display: flex;
-    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-    will-change: transform;
-  }
-
-  .slide {
-    min-width: 100%;
-    background: #1a1a1a;
-    border-radius: 20px;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-  }
-
-  /* Art image */
-  .art-image-wrap {
-    position: relative;
-    height: 300px;
-    background: #1e1e1e;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .art-image {
-    max-width: 100%;
-    max-height: 100%;
-    width: auto;
-    height: auto;
-    object-fit: contain;
-    display: block;
-  }
-
-  .art-image-fallback {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    color: #555;
-    font-size: 13px;
-    width: 100%;
-    height: 100%;
-  }
-
-  /* Art info */
-  .art-info {
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-  }
-
-  .art-meta {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  .art-badge {
-    background: rgba(195, 169, 32, 0.15);
-    color: #c3a920;
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    padding: 4px 10px;
-    border-radius: 6px;
-    border: 1px solid rgba(195, 169, 32, 0.3);
-  }
-
-  .art-id {
-    font-size: 12px;
-    color: #555;
-    font-family: 'Courier New', monospace;
-  }
-
-  .art-location {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 13px;
-    color: #888;
-  }
-
-  /* Kunstuitleen button */
-  .btn-kunstuitleen {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    background: #c3a920;
-    color: #111;
-    border-radius: 12px;
-    padding: 16px 20px;
-    font-size: 15px;
-    font-weight: 600;
-    letter-spacing: 0.02em;
-    transition: opacity 0.15s, transform 0.1s;
-    -webkit-tap-highlight-color: transparent;
-  }
-
-  .btn-kunstuitleen:hover {
-    opacity: 0.9;
-  }
-
-  .btn-kunstuitleen:active {
-    transform: scale(0.97);
-  }
-
-  /* Dots */
-  .dots {
-    display: flex;
-    justify-content: center;
-    gap: 8px;
-    padding: 16px 0 4px;
-  }
-
-  .dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: #333;
-    border: none;
-    padding: 0;
-    cursor: pointer;
-    transition: background 0.2s, transform 0.2s;
-    -webkit-tap-highlight-color: transparent;
-  }
-
-  .dot.active {
-    background: #c3a920;
-    transform: scale(1.4);
-  }
-
-  /* Swipe hint */
-  .swipe-hint {
-    text-align: center;
-    font-size: 12px;
-    color: #444;
-    letter-spacing: 0.05em;
-    padding-bottom: 8px;
-  }
-
-  /* Your photo */
-  .your-photo-section {
-    margin-top: 8px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .your-photo-section h2 {
-    font-size: 14px;
-    font-weight: 400;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: #555;
-  }
-
-  .your-photo {
-    width: 100%;
-    border-radius: 12px;
-    object-fit: cover;
-    max-height: 180px;
-    filter: brightness(0.85);
-  }
-
-  /* Footer actions */
-  .footer-actions {
-    margin-top: 16px;
-  }
-
-  .btn-secondary {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    background: transparent;
-    color: #f0ede6;
-    border: 1.5px solid #2a2a2a;
-    border-radius: 14px;
-    padding: 17px 24px;
-    font-size: 15px;
-    font-weight: 400;
-    width: 100%;
-    transition: border-color 0.15s, transform 0.1s;
-    -webkit-tap-highlight-color: transparent;
-  }
-
-  .btn-secondary:hover {
-    border-color: #444;
-  }
-
-  .btn-secondary:active {
-    transform: scale(0.98);
-  }
-
-  /* Empty state */
-  .empty {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 16px;
-    color: #666;
-  }
-
-  .link {
-    background: none;
-    border: none;
-    color: #c3a920;
-    font-size: inherit;
-    text-decoration: underline;
-    text-underline-offset: 3px;
-    cursor: pointer;
-  }
-</style>
