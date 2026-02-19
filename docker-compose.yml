@@ -25,12 +25,20 @@ services:
     build:
       dockerfile: ./backend/Dockerfile
     container_name: fastapi_app_container
-    ports:
-      - "80:8000" # Map host port 8001 to FastAPI's internal port 8000
     environment:
-      # Example: Pass ChromaDB host to FastAPI.
-      # Use the service name 'chromadb' as the hostname for inter-container communication.
       CHROMADB_HOST: chromadb
+    restart: unless-stopped
+
+  # Frontend (SvelteKit static + nginx reverse proxy)
+  frontend_improved:
+    build:
+      context: ./frontend-improved
+      dockerfile: Dockerfile
+    container_name: frontend_improved_container
+    ports:
+      - "80:80"
+    depends_on:
+      - fastapi_app
     restart: unless-stopped
   async_worker:
     build:

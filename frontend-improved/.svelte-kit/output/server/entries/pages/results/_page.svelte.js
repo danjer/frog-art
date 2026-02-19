@@ -6,7 +6,7 @@ import "@sveltejs/kit/internal/server";
 import "../../../chunks/root.js";
 import "../../../chunks/state.svelte.js";
 import { w as writable } from "../../../chunks/index.js";
-const artResults = writable(null);
+const artResults = writable([]);
 const capturedImageUrl = writable(null);
 function _page($$renderer, $$props) {
   $$renderer.component(($$renderer2) => {
