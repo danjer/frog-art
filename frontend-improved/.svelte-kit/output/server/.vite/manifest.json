@@ -111,6 +111,12 @@
       "_root.js"
     ]
   },
+  "src/routes/+layout.js": {
+    "file": "entries/pages/_layout.js",
+    "name": "entries/pages/_layout",
+    "src": "src/routes/+layout.js",
+    "isEntry": true
+  },
   "src/routes/+layout.svelte": {
     "file": "entries/pages/_layout.svelte.js",
     "name": "entries/pages/_layout.svelte",
@@ -120,7 +126,7 @@
       "_index2.js"
     ],
     "css": [
-      "_app/immutable/assets/_layout.D9f9_5TW.css"
+      "_app/immutable/assets/_layout.8SJviZmA.css"
     ]
   },
   "src/routes/+page.svelte": {
